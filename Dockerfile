@@ -2,17 +2,18 @@ FROM frolvlad/alpine-glibc AS builder
 LABEL maintainer="chevdor@gmail.com"
 LABEL description="This is the build stage for Substrate. Here we create the binary."
 
+ARG WORKSPACE=/substrate
+ARG PROFILE=release
+
 RUN apk add build-base \
     cmake \
     linux-headers \
     openssl-dev && \
     apk add --repository http://nl.alpinelinux.org/alpine/edge/community cargo
 
-ARG PROFILE=release
-WORKDIR /substrate
-
 COPY . /substrate
 
+WORKDIR $WORKSPACE
 RUN cargo build --$PROFILE
 
 # ===== SECOND STAGE ======
@@ -20,8 +21,12 @@ RUN cargo build --$PROFILE
 FROM alpine:3.8
 LABEL maintainer="chevdor@gmail.com"
 LABEL description="This is the 2nd stage: a very small image where we copy the Substrate binary."
+
+ARG WORKSPACE=/substrate
 ARG PROFILE=release
-COPY --from=builder /substrate/target/$PROFILE/substrate /usr/local/bin
+ARG EXECUTABLE=substrate
+
+COPY --from=builder $WORKSPACE/target/$PROFILE/$EXECUTABLE /usr/local/bin
 
 RUN apk add --no-cache ca-certificates \
     libstdc++ \
@@ -34,4 +39,4 @@ RUN rm -rf /usr/lib/python* && \
 EXPOSE 30333 9933 9944
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/substrate"]
+CMD ["/usr/local/bin/$EXECUTABLE"]

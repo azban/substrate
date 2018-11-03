@@ -1,5 +1,6 @@
 doc
-target
+**/target
+!**/wasm/target
 .idea/
 Dockerfile
 .dockerignore
